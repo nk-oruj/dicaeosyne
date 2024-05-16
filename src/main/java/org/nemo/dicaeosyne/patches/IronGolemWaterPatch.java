@@ -1,40 +1,37 @@
-package org.nemo.dicaeosyne.runnables;
+package org.nemo.dicaeosyne.patches;
 
-import org.bukkit.World;
 import org.bukkit.entity.Damageable;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.nemo.dicaeosyne.Dicaeosyne;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.UUID;
 
-public class MainRunnable extends BukkitRunnable implements Listener {
+public class IronGolemWaterPatch implements Listener {
+    private final HashMap<UUID, BukkitRunnable> golemMap;
 
-    private JavaPlugin plugin;
-    private Map<UUID, BukkitRunnable> golemMap;
-
-    public MainRunnable(JavaPlugin plugin) {
-        this.plugin = plugin;
-        this.golemMap = new HashMap<UUID, BukkitRunnable>();
+    public IronGolemWaterPatch() {
+        Dicaeosyne.Plugin.getServer().getPluginManager().registerEvents(this, Dicaeosyne.Plugin);
+        golemMap = new HashMap<>();
     }
 
-    private void UnloadGolem(UUID golemID) {
+    private void unloadGolem(UUID golemID) {
         golemMap.get(golemID).cancel();
         golemMap.remove(golemID);
     }
 
-    private void ResolveGolem(Entity entity) {
+    public void resolveGolem(Entity entity) {
         Damageable golem = (Damageable) entity;
         UUID golemID = golem.getUniqueId();
 
         if (golemMap.containsKey(golemID)) {
             if (golem.isInWater()) return;
-            UnloadGolem(golemID);
+            unloadGolem(golemID);
         }
 
         if (!golem.isInWater()) return;
@@ -46,24 +43,14 @@ public class MainRunnable extends BukkitRunnable implements Listener {
             }
         });
 
-        golemMap.get(golemID).runTaskTimer(plugin, 0, 20);
-    }
-
-    @Override
-    public void run() {
-        for (World world : plugin.getServer().getWorlds()) {
-            for (Entity entity : world.getEntities()) {
-                if (entity.getType() != EntityType.IRON_GOLEM) continue;
-                ResolveGolem(entity);
-            }
-        }
+        golemMap.get(golemID).runTaskTimer(Dicaeosyne.Plugin, 0, 20);
     }
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event){
         for (Entity e: event.getChunk().getEntities()) {
             if (!golemMap.containsKey(e.getUniqueId())) continue;
-            UnloadGolem(e.getUniqueId());
+            unloadGolem(e.getUniqueId());
         }
     }
 
@@ -71,6 +58,6 @@ public class MainRunnable extends BukkitRunnable implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (!golemMap.containsKey(event.getEntity().getUniqueId())) return;
         event.getDrops().clear();
-        UnloadGolem(event.getEntity().getUniqueId());
+        unloadGolem(event.getEntity().getUniqueId());
     }
 }

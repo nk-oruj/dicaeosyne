@@ -1,29 +1,21 @@
 package org.nemo.dicaeosyne;
 
 import org.bukkit.plugin.java.JavaPlugin;
-import org.nemo.dicaeosyne.commands.CommandHello;
-import org.nemo.dicaeosyne.runnables.MainRunnable;
 
 public final class Dicaeosyne extends JavaPlugin {
-    private MainRunnable mainRun;
+    public static JavaPlugin Plugin;
+    private static MainRunnable Main;
 
     @Override
     public void onEnable() {
-        ////
-        this.mainRun = new MainRunnable(this);
-        getServer().getPluginManager().registerEvents(this.mainRun, this);
-        this.mainRun.runTaskTimer(this, 0, 1);
-        ////
+        Dicaeosyne.Plugin = this;
 
-        ////
-        getCommand("hello").setExecutor(new CommandHello());
-        ////
+        Dicaeosyne.Main = new MainRunnable();
+        Dicaeosyne.Main.runTaskTimer(this, 0, 1);
     }
 
     @Override
     public void onDisable() {
-        ////
-        this.mainRun.cancel();
-        ////
+        Dicaeosyne.Main.cancel();
     }
 }
